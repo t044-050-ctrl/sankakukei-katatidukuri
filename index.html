@@ -1,0 +1,1115 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>かたちづくり</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: BIZ UDPGothic -->
+    <link href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap" rel="stylesheet">
+    <!-- html2canvas (スクリーンショット機能用) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    
+    <style>
+        :root {
+            /* 単一色ボタンの高さ基準 */
+            --btn-h: clamp(44px, 6.8vh, 56px);
+        }
+
+        /* UD教科書体・UDフォント指定 */
+        body, button, div, span {
+            font-family: "UD デジタル 教科書体 N-R", "UD Digital Kyokasho N-R", "BIZ UDPGothic", "Hiragino Kaku Gothic ProN", sans-serif;
+            user-select: none;
+            -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            touch-action: manipulation;
+        }
+
+        body {
+            background-color: #ffffff;
+            margin: 0;
+            padding: 0;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 画面比16:9のレスポンシブコンテナ */
+        .stage-16-9 {
+            width: 100vw;
+            height: 56.25vw; /* 100 * 9 / 16 */
+            max-height: 100vh;
+            max-width: 177.78vh; /* 100 * 16 / 9 */
+            margin: auto;
+            position: absolute;
+            top: 0; bottom: 0; left: 0; right: 0;
+            background-color: #ffffff;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.5rem 1rem;
+            box-sizing: border-box;
+        }
+
+        /* 立体面取りボタン */
+        .btn-ui {
+            background-color: #ffffff;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            box-shadow: 0 3px 0 #cbd5e1, 0 3px 6px rgba(0, 0, 0, 0.05);
+            transition: all 0.08s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            position: relative;
+            padding: 2px 4px;
+            box-sizing: border-box;
+        }
+
+        .btn-ui:active {
+            transform: translateY(2px);
+            box-shadow: 0 1px 0 #cbd5e1, 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .btn-ui.active-tool {
+            border-color: #3b82f6;
+            background-color: #f0f6ff;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3), 0 3px 0 #2563eb;
+        }
+
+        .btn-label {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+            text-align: center;
+            line-height: 1;
+            font-size: min(9px, 1.15vh);
+            font-weight: 700;
+            color: #334155;
+            margin-top: 2px;
+        }
+
+        .btn-label-xs {
+            font-size: min(8px, 1.0vh);
+            letter-spacing: -0.5px;
+        }
+
+        .btn-label-sm {
+            font-size: min(8.5px, 1.1vh);
+        }
+
+        .btn-square-custom {
+            width: var(--btn-h);
+            height: var(--btn-h);
+            min-width: var(--btn-h);
+            min-height: var(--btn-h);
+        }
+
+        .btn-group-width {
+            width: calc(var(--btn-h) * 3 + 1rem);
+        }
+
+        /* パレットの色ぼうアイテム */
+        .palette-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 8px 4px;
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: 8px;
+            cursor: grab;
+            touch-action: none;
+            transition: background-color 0.1s ease;
+            min-height: 100px;
+        }
+        .palette-item:active {
+            cursor: grabbing;
+            background-color: #f1f5f9;
+        }
+
+        /* 重複時吹き出しポップアップ */
+        .popover-msg {
+            position: absolute;
+            background-color: #f8fafc;
+            border: 2.5px solid #8b5cf6;
+            color: #1e293b;
+            font-weight: 700;
+            font-size: min(13px, 1.9vh);
+            padding: 8px 14px;
+            border-radius: 18px;
+            box-shadow: 0 4px 14px rgba(139, 92, 246, 0.25);
+            pointer-events: auto;
+            cursor: pointer;
+            z-index: 100;
+            transform: translate(-50%, -100%);
+            animation: popIn 0.25s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            white-space: pre-line;
+            text-align: center;
+            line-height: 1.25;
+            transition: transform 0.1s ease, background-color 0.1s ease;
+        }
+        .popover-msg:hover {
+            background-color: #f1f5f9;
+            transform: translate(-50%, -102%) scale(1.03);
+        }
+        .popover-msg:active {
+            transform: translate(-50%, -98%) scale(0.97);
+        }
+        .popover-msg::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            border-width: 8px 7px 0;
+            border-style: solid;
+            border-color: #8b5cf6 transparent;
+            display: block;
+            width: 0;
+        }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: translate(-50%, -80%) scale(0.8); }
+            100% { opacity: 1; transform: translate(-50%, -100%) scale(1); }
+        }
+
+        /* ゴミ箱と蓋のアニメーションスタイル */
+        #trash-can {
+            transform: scale(0.7);
+            transform-origin: bottom right;
+            transition: transform 0.2s ease-out;
+        }
+
+        #trash-lid {
+            transform-origin: 48px 16px;
+            transform-box: view-box;
+            transition: transform 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        /* 近づいた時にゴミ箱を少し拡大し、蓋の左側が上に開く (+42度回転) */
+        .trash-open #trash-can-inner {
+            transform: scale(1.12);
+        }
+
+        .trash-open #trash-lid {
+            transform: rotate(42deg);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="stage-16-9">
+        
+        <!-- 左〜中央: ワークスペース（色ぼうを並べる作業エリア） -->
+        <div id="workspace" class="h-full flex-1 relative bg-slate-50/50 rounded-xl border-2 border-slate-200 overflow-hidden mr-3 touch-none">
+            
+            <!-- お絵かき・レーザー用 Canvas -->
+            <canvas id="paint-canvas" class="absolute inset-0 z-10 w-full h-full pointer-events-auto touch-none"></canvas>
+
+            <!-- メッセージポップアップ表示レイヤー -->
+            <div id="popup-container" class="absolute inset-0 pointer-events-none z-30"></div>
+
+            <!-- 作業ボード右下: ゴミ箱 -->
+            <div id="trash-can" class="absolute bottom-3 right-3 z-30 pointer-events-none flex flex-col items-center justify-end">
+                <div id="trash-can-inner" class="transition-transform duration-200 ease-out">
+                    <svg width="60" height="64" viewBox="0 0 60 64" fill="none" xmlns="http://www.w3.org/2000/svg" class="overflow-visible">
+                        <!-- ゴミ箱本体 -->
+                        <g id="trash-body">
+                            <path d="M 10 18 L 50 18 L 44 58 C 43.5 61 41 62 38 62 L 22 62 C 19 62 16.5 61 16 58 L 10 18 Z" fill="#5A6B7C"/>
+                            <!-- 縦の白ライン -->
+                            <line x1="22" y1="24" x2="24" y2="52" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.75"/>
+                            <line x1="30" y1="24" x2="30" y2="52" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.75"/>
+                            <line x1="38" y1="24" x2="36" y2="52" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" opacity="0.75"/>
+                        </g>
+                        <!-- ゴミ箱の蓋 (右端 48px 16px を支点に左側が持ち上がる) -->
+                        <g id="trash-lid">
+                            <!-- 取っ手 -->
+                            <rect x="25" y="4" width="10" height="4" rx="1.5" fill="#5A6B7C"/>
+                            <!-- 横板 -->
+                            <rect x="5" y="8" width="50" height="8" rx="3" fill="#5A6B7C"/>
+                        </g>
+                    </svg>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- 右側: 色ぼうパレット ＆ 操作ボタンエリア -->
+        <div class="h-full flex flex-col justify-between items-end shrink-0 py-1 pr-1 gap-2">
+            
+            <!-- 操作ボタンエリア -->
+            <div class="flex flex-col justify-start items-end shrink-0 gap-2 sm:gap-2.5">
+                
+                <!-- 行1: 「はじめから」「１つもどす」「カメラ」 -->
+                <div class="flex gap-2 btn-group-width justify-between items-center">
+                    <button onclick="handleReset()" class="btn-ui btn-square-custom hover:bg-rose-50">
+                        <i class="fa-solid fa-rotate-left text-rose-600 text-sm stroke-[2.5px]"></i>
+                        <span class="btn-label btn-label-xs">はじめから</span>
+                    </button>
+                    <button onclick="handleUndo()" class="btn-ui btn-square-custom hover:bg-amber-50">
+                        <svg class="w-4 h-4 text-amber-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 14L4 9l5-5"/>
+                            <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5v0a5.5 5.5 0 0 1-5.5 5.5H12"/>
+                        </svg>
+                        <span class="btn-label btn-label-xs">１つもどす</span>
+                    </button>
+                    <button onclick="handleScreenshot()" class="btn-ui btn-square-custom hover:bg-emerald-50">
+                        <i class="fa-solid fa-camera text-emerald-600 text-sm"></i>
+                        <span class="btn-label btn-label-xs text-emerald-700">カメラ</span>
+                    </button>
+                </div>
+
+                <!-- 行2: 「黒」「赤」「青」 -->
+                <div class="flex gap-2 btn-group-width justify-between items-center">
+                    <button id="btn-pen-black" onclick="setTool('pen-black')" class="btn-ui btn-square-custom">
+                        <i class="fa-solid fa-pen text-slate-800 text-sm"></i>
+                        <span class="btn-label text-slate-800">黒</span>
+                    </button>
+                    <button id="btn-pen-red" onclick="setTool('pen-red')" class="btn-ui btn-square-custom">
+                        <i class="fa-solid fa-pen text-red-500 text-sm"></i>
+                        <span class="btn-label text-red-600">赤</span>
+                    </button>
+                    <button id="btn-pen-blue" onclick="setTool('pen-blue')" class="btn-ui btn-square-custom">
+                        <i class="fa-solid fa-pen text-blue-500 text-sm"></i>
+                        <span class="btn-label text-blue-600">青</span>
+                    </button>
+                </div>
+
+                <!-- 行3: 「消しゴム」「全消去」「レーザー」 -->
+                <div class="flex gap-2 btn-group-width justify-between items-center">
+                    <button id="btn-tool-eraser" onclick="setTool('eraser')" class="btn-ui btn-square-custom">
+                        <i class="fa-solid fa-eraser text-teal-600 text-sm"></i>
+                        <span class="btn-label btn-label-sm">消しゴム</span>
+                    </button>
+                    <button onclick="handleClearCanvas()" class="btn-ui btn-square-custom hover:bg-slate-50">
+                        <i class="fa-solid fa-trash-can text-slate-500 text-sm"></i>
+                        <span class="btn-label">全消去</span>
+                    </button>
+                    <button id="btn-tool-laser" onclick="setTool('laser')" class="btn-ui btn-square-custom">
+                        <i class="fa-solid fa-bullseye text-red-600 text-sm"></i>
+                        <span class="btn-label text-red-600 btn-label-sm">レーザー</span>
+                    </button>
+                </div>
+
+            </div>
+
+            <!-- 色ぼうの取り出し山（ドラッグしてステージへ引っ張り出す） -->
+            <div class="btn-group-width bg-white p-2 rounded-xl border-2 border-slate-200 shadow-sm flex flex-col gap-1">
+                <div class="text-[11px] font-bold text-slate-500 text-center border-b pb-0.5">色ぼう（引っぱって出す）</div>
+                
+                <div class="grid grid-cols-2 gap-1.5 justify-items-center items-end py-1">
+                    <!-- 赤 (3) -->
+                    <div class="palette-item w-full" onpointerdown="startPaletteDrag(event, 'red')">
+                        <div id="palette-bar-red" class="w-2 rounded-full mb-1.5" style="background-color: #FA5947;"></div>
+                        <span id="label-red" class="text-[11px] font-bold text-slate-600">赤 6㎝</span>
+                    </div>
+                    <!-- 黄 (4) -->
+                    <div class="palette-item w-full" onpointerdown="startPaletteDrag(event, 'yellow')">
+                        <div id="palette-bar-yellow" class="w-2 rounded-full mb-1.5" style="background-color: #E9E67A;"></div>
+                        <span id="label-yellow" class="text-[11px] font-bold text-slate-600">黄 8㎝</span>
+                    </div>
+                    <!-- 青 (5) -->
+                    <div class="palette-item w-full" onpointerdown="startPaletteDrag(event, 'blue')">
+                        <div id="palette-bar-blue" class="w-2 rounded-full mb-1.5" style="background-color: #70B8EF;"></div>
+                        <span id="label-blue" class="text-[11px] font-bold text-slate-600">青 10㎝</span>
+                    </div>
+                    <!-- 緑 (6) -->
+                    <div class="palette-item w-full" onpointerdown="startPaletteDrag(event, 'green')">
+                        <div id="palette-bar-green" class="w-2 rounded-full mb-1.5" style="background-color: #58B386;"></div>
+                        <span id="label-green" class="text-[11px] font-bold text-slate-600">緑 12㎝</span>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        // --- 設定・定数 ---
+        const STICK_CONFIGS = {
+            red:    { name: '赤', label: '赤 6㎝', color: '#FA5947', ratio: 3 },
+            yellow: { name: '黄', label: '黄 8㎝', color: '#E9E67A', ratio: 4 },
+            blue:   { name: '青', label: '青 10㎝', color: '#70B8EF', ratio: 5 },
+            green:  { name: '緑', label: '緑 12㎝', color: '#58B386', ratio: 6 }
+        };
+
+        const SNAP_THRESHOLD = 26; // 端点吸着の感度(px)
+        const STICK_THICKNESS = 8; // 色ぼうの太さ(px)
+
+        // --- 状態変数 ---
+        let currentTool = 'select';
+        let sticks = [];            // ステージ上の色ぼう一覧
+        let groups = [];            // 完成した形（グループ）一覧
+        let nextStickId = 1;
+        let nextGroupId = 1;
+
+        // Undo履歴
+        let historyStack = [];
+
+        // ドラッグ・操作中アクション情報
+        let activeAction = null;
+        let longPressTimer = null;
+
+        // Canvas / 描画参照
+        const canvas = document.getElementById('paint-canvas');
+        const ctx = canvas.getContext('2d');
+        const penCanvas = document.createElement('canvas');
+        const penCtx = penCanvas.getContext('2d');
+        const workspace = document.getElementById('workspace');
+
+        let isInteracting = false;
+        let startPoint = { x: 0, y: 0 };
+        let laserPaths = [];
+
+        let unitPx = 32;
+
+        window.onload = () => {
+            resizeCanvas();
+            setupCanvasEvents();
+            setupWorkspaceEvents();
+            
+            // 長押しや右クリック等によるコンテキストメニューの表示を完全に無効化
+            window.addEventListener('contextmenu', (e) => e.preventDefault());
+
+            requestAnimationFrame(animateLaser);
+        };
+
+        window.onresize = () => {
+            resizeCanvas();
+        };
+
+        function resizeCanvas() {
+            const rect = workspace.getBoundingClientRect();
+            
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = penCanvas.width;
+            tempCanvas.height = penCanvas.height;
+            const tempCtx = tempCanvas.getContext('2d');
+            if (penCanvas.width > 0 && penCanvas.height > 0) {
+                tempCtx.drawImage(penCanvas, 0, 0);
+            }
+
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+            penCanvas.width = rect.width;
+            penCanvas.height = rect.height;
+
+            if (tempCanvas.width > 0 && tempCanvas.height > 0) {
+                penCtx.drawImage(tempCanvas, 0, 0, penCanvas.width, penCanvas.height);
+            }
+
+            unitPx = ((rect.height / 3.2) / 6) * 0.95;
+            updatePaletteDisplayLengths();
+            renderSticks();
+        }
+
+        function updatePaletteDisplayLengths() {
+            const greenLengthPx = STICK_CONFIGS.green.ratio * unitPx;
+            Object.keys(STICK_CONFIGS).forEach(type => {
+                const bar = document.getElementById(`palette-bar-${type}`);
+                if (bar) {
+                    const exactRatio = STICK_CONFIGS[type].ratio / STICK_CONFIGS.green.ratio;
+                    const actualPx = greenLengthPx * exactRatio;
+                    bar.style.height = `${actualPx}px`;
+                }
+            });
+        }
+
+        function setTool(tool) {
+            if (currentTool === tool) {
+                currentTool = 'select';
+            } else {
+                currentTool = tool;
+            }
+            updateToolUI();
+        }
+
+        function updateToolUI() {
+            const toolButtons = {
+                'pen-black': document.getElementById('btn-pen-black'),
+                'pen-red': document.getElementById('btn-pen-red'),
+                'pen-blue': document.getElementById('btn-pen-blue'),
+                'eraser': document.getElementById('btn-tool-eraser'),
+                'laser': document.getElementById('btn-tool-laser')
+            };
+
+            Object.keys(toolButtons).forEach(key => {
+                if (toolButtons[key]) {
+                    toolButtons[key].classList.toggle('active-tool', currentTool === key);
+                }
+            });
+
+            canvas.style.pointerEvents = (currentTool === 'select') ? 'none' : 'auto';
+        }
+
+        function saveToHistory() {
+            if (historyStack.length >= 25) historyStack.shift();
+            
+            const penSnapshot = penCtx.getImageData(0, 0, penCanvas.width, penCanvas.height);
+            historyStack.push({
+                sticks: JSON.parse(JSON.stringify(sticks)),
+                groups: JSON.parse(JSON.stringify(groups)),
+                penSnapshot: penSnapshot
+            });
+        }
+
+        function handleUndo() {
+            if (historyStack.length === 0) return;
+            const state = historyStack.pop();
+            sticks = state.sticks;
+            groups = state.groups;
+            if (state.penSnapshot) {
+                penCtx.putImageData(state.penSnapshot, 0, 0);
+            }
+            renderSticks();
+        }
+
+        function handleReset() {
+            saveToHistory();
+            sticks = [];
+            groups = [];
+            penCtx.clearRect(0, 0, penCanvas.width, penCanvas.height);
+            laserPaths = [];
+            document.getElementById('popup-container').innerHTML = '';
+            renderSticks();
+        }
+
+        function handleClearCanvas() {
+            saveToHistory();
+            penCtx.clearRect(0, 0, penCanvas.width, penCanvas.height);
+        }
+
+        function handleScreenshot() {
+            const ws = document.getElementById('workspace');
+            if (!ws) return;
+
+            html2canvas(ws, {
+                backgroundColor: '#ffffff',
+                scale: 2,
+                useCORS: true,
+                logging: false
+            }).then(canvasImage => {
+                const image = canvasImage.toDataURL('image/png');
+                const link = document.createElement('a');
+                const now = new Date();
+                const timestamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
+                link.download = `irobou_work_${timestamp}.png`;
+                link.href = image;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }).catch(err => {
+                console.error('Screenshot failed:', err);
+            });
+        }
+
+        function startPaletteDrag(e, type) {
+            saveToHistory();
+
+            currentTool = 'select';
+            updateToolUI();
+
+            const rect = workspace.getBoundingClientRect();
+            const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+            const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+
+            const len = STICK_CONFIGS[type].ratio * unitPx;
+            const x1 = clientX - rect.left - len / 2;
+            const y1 = clientY - rect.top;
+            const x2 = x1 + len;
+            const y2 = y1;
+
+            const newStick = {
+                id: nextStickId++,
+                type: type,
+                color: STICK_CONFIGS[type].color,
+                lengthRatio: STICK_CONFIGS[type].ratio,
+                p1: { x: x1, y: y1 },
+                p2: { x: x2, y: y2 },
+                groupId: null
+            };
+
+            sticks.push(newStick);
+            renderSticks();
+
+            activeAction = {
+                type: 'move',
+                stickId: newStick.id,
+                startPointer: { x: clientX, y: clientY },
+                initialP1: { ...newStick.p1 },
+                initialP2: { ...newStick.p2 }
+            };
+        }
+
+        function renderSticks() {
+            const existing = workspace.querySelectorAll('.stick-element');
+            existing.forEach(el => el.remove());
+
+            sticks.forEach(stick => {
+                const stickEl = createStickDOM(stick);
+                workspace.appendChild(stickEl);
+            });
+        }
+
+        function createStickDOM(stick) {
+            const dx = stick.p2.x - stick.p1.x;
+            const dy = stick.p2.y - stick.p1.y;
+            const len = Math.hypot(dx, dy);
+            const angle = Math.atan2(dy, dx);
+            const radius = STICK_THICKNESS / 2;
+
+            const container = document.createElement('div');
+            container.className = 'stick-element absolute touch-none select-none z-20';
+            container.dataset.stickId = stick.id;
+            container.style.width = `${len + STICK_THICKNESS}px`;
+            container.style.height = `${STICK_THICKNESS}px`;
+            container.style.left = `${stick.p1.x - radius}px`;
+            container.style.top = `${stick.p1.y - radius}px`;
+            container.style.transformOrigin = `${radius}px ${radius}px`;
+            container.style.transform = `rotate(${angle}rad)`;
+
+            const body = document.createElement('div');
+            body.className = 'w-full h-full rounded-full shadow-md transition-shadow cursor-grab active:cursor-grabbing';
+            body.style.backgroundColor = stick.color;
+            body.style.border = '1px solid rgba(0,0,0,0.12)';
+            container.appendChild(body);
+
+            const handle1 = document.createElement('div');
+            handle1.className = 'absolute top-1/2 -translate-y-1/2 -left-2 w-6 h-6 rounded-full cursor-pointer z-30';
+            
+            const handle2 = document.createElement('div');
+            handle2.className = 'absolute top-1/2 -translate-y-1/2 -right-2 w-6 h-6 rounded-full cursor-pointer z-30';
+
+            container.appendChild(handle1);
+            container.appendChild(handle2);
+
+            container.addEventListener('pointerdown', (e) => handleStickPointerDown(e, stick, 'body'));
+            handle1.addEventListener('pointerdown', (e) => { e.stopPropagation(); handleStickPointerDown(e, stick, 'p1'); });
+            handle2.addEventListener('pointerdown', (e) => { e.stopPropagation(); handleStickPointerDown(e, stick, 'p2'); });
+
+            return container;
+        }
+
+        function handleStickPointerDown(e, stick, targetType) {
+            if (currentTool !== 'select') return;
+            e.stopPropagation();
+            saveToHistory();
+
+            const clientX = e.clientX;
+            const clientY = e.clientY;
+
+            if (stick.groupId && targetType === 'body') {
+                longPressTimer = setTimeout(() => {
+                    detachStickFromGroup(stick);
+                    longPressTimer = null;
+                }, 350);
+            }
+
+            if (targetType === 'body') {
+                if (stick.groupId) {
+                    const group = groups.find(g => g.id === stick.groupId);
+                    const groupSticks = sticks.filter(s => s.groupId === group.id);
+                    activeAction = {
+                        type: 'group-move',
+                        groupId: group.id,
+                        stick: stick,
+                        startPointer: { x: clientX, y: clientY },
+                        initialStates: groupSticks.map(s => ({ id: s.id, p1: { ...s.p1 }, p2: { ...s.p2 } }))
+                    };
+                } else {
+                    activeAction = {
+                        type: 'move',
+                        stickId: stick.id,
+                        startPointer: { x: clientX, y: clientY },
+                        initialP1: { ...stick.p1 },
+                        initialP2: { ...stick.p2 }
+                    };
+                }
+            } else if (targetType === 'p1') {
+                if (stick.groupId) detachStickFromGroup(stick);
+                activeAction = {
+                    type: 'rotate',
+                    stickId: stick.id,
+                    dragPoint: 'p1',
+                    fixedPoint: { ...stick.p2 },
+                    length: stick.lengthRatio * unitPx
+                };
+            } else if (targetType === 'p2') {
+                if (stick.groupId) detachStickFromGroup(stick);
+                activeAction = {
+                    type: 'rotate',
+                    stickId: stick.id,
+                    dragPoint: 'p2',
+                    fixedPoint: { ...stick.p1 },
+                    length: stick.lengthRatio * unitPx
+                };
+            }
+        }
+
+        function setupWorkspaceEvents() {
+            window.addEventListener('pointermove', (e) => {
+                if (!activeAction) return;
+
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+
+                const rect = workspace.getBoundingClientRect();
+                const curX = e.clientX - rect.left;
+                const curY = e.clientY - rect.top;
+
+                // ゴミ箱の近くかどうかの検出
+                const trashEl = document.getElementById('trash-can');
+                let isNearTrash = false;
+                if (trashEl) {
+                    const trashRect = trashEl.getBoundingClientRect();
+                    const trashCenterX = trashRect.left + trashRect.width / 2;
+                    const trashCenterY = trashRect.top + trashRect.height / 2;
+                    const dist = Math.hypot(e.clientX - trashCenterX, e.clientY - trashCenterY);
+                    
+                    if (dist < 85) {
+                        isNearTrash = true;
+                        workspace.classList.add('trash-open');
+                    } else {
+                        workspace.classList.remove('trash-open');
+                    }
+                }
+
+                if (activeAction.type === 'move') {
+                    const stick = sticks.find(s => s.id === activeAction.stickId);
+                    if (!stick) return;
+
+                    const dx = e.clientX - activeAction.startPointer.x;
+                    const dy = e.clientY - activeAction.startPointer.y;
+
+                    stick.p1 = { x: activeAction.initialP1.x + dx, y: activeAction.initialP1.y + dy };
+                    stick.p2 = { x: activeAction.initialP2.x + dx, y: activeAction.initialP2.y + dy };
+
+                    if (!isNearTrash) applySnapping(stick, 'both');
+                    renderSticks();
+
+                } else if (activeAction.type === 'group-move') {
+                    const dx = e.clientX - activeAction.startPointer.x;
+                    const dy = e.clientY - activeAction.startPointer.y;
+
+                    activeAction.initialStates.forEach(st => {
+                        const s = sticks.find(item => item.id === st.id);
+                        if (s) {
+                            s.p1 = { x: st.p1.x + dx, y: st.p1.y + dy };
+                            s.p2 = { x: st.p2.x + dx, y: st.p2.y + dy };
+                        }
+                    });
+                    renderSticks();
+
+                } else if (activeAction.type === 'rotate') {
+                    const stick = sticks.find(s => s.id === activeAction.stickId);
+                    if (!stick) return;
+
+                    const fixed = activeAction.fixedPoint;
+                    const angle = Math.atan2(curY - fixed.y, curX - fixed.x);
+                    const len = activeAction.length;
+
+                    const newDragPos = {
+                        x: fixed.x + len * Math.cos(angle),
+                        y: fixed.y + len * Math.sin(angle)
+                    };
+
+                    if (activeAction.dragPoint === 'p1') {
+                        stick.p1 = newDragPos;
+                        stick.p2 = { ...fixed };
+                        if (!isNearTrash) applySnapping(stick, 'p1');
+                    } else {
+                        stick.p2 = newDragPos;
+                        stick.p1 = { ...fixed };
+                        if (!isNearTrash) applySnapping(stick, 'p2');
+                    }
+                    renderSticks();
+                }
+            });
+
+            window.addEventListener('pointerup', () => {
+                if (longPressTimer) {
+                    clearTimeout(longPressTimer);
+                    longPressTimer = null;
+                }
+
+                if (activeAction) {
+                    if (workspace.classList.contains('trash-open')) {
+                        deleteTargetWithTrashAnimation(activeAction);
+                    } else {
+                        checkAndFormGroup();
+                    }
+                    workspace.classList.remove('trash-open');
+                    activeAction = null;
+                }
+            });
+        }
+
+        // ゴミ箱吸い込みアニメーションと破棄処理
+        function deleteTargetWithTrashAnimation(action) {
+            const trashEl = document.getElementById('trash-can');
+            if (!trashEl) return;
+
+            const trashRect = trashEl.getBoundingClientRect();
+            const trashCenterX = trashRect.left + trashRect.width / 2;
+            const trashCenterY = trashRect.top + trashRect.height / 2;
+            const wsRect = workspace.getBoundingClientRect();
+
+            let targetStickIds = [];
+            if (action.type === 'move' || action.type === 'rotate') {
+                targetStickIds = [action.stickId];
+            } else if (action.type === 'group-move') {
+                const group = groups.find(g => g.id === action.groupId);
+                if (group) {
+                    targetStickIds = [...group.stickIds];
+                }
+            }
+
+            if (targetStickIds.length === 0) return;
+
+            // 各要素をゴミ箱へ吸引回転縮小
+            targetStickIds.forEach(id => {
+                const el = workspace.querySelector(`.stick-element[data-stick-id="${id}"]`);
+                if (el) {
+                    el.style.transition = 'all 0.28s cubic-bezier(0.55, 0.055, 0.675, 0.19)';
+                    el.style.left = `${trashCenterX - wsRect.left}px`;
+                    el.style.top = `${trashCenterY - wsRect.top}px`;
+                    el.style.transform += ' scale(0.08) rotate(180deg)';
+                    el.style.opacity = '0';
+                }
+            });
+
+            setTimeout(() => {
+                sticks = sticks.filter(s => !targetStickIds.includes(s.id));
+                groups = groups.filter(g => !g.stickIds.some(id => targetStickIds.includes(id)));
+                renderSticks();
+            }, 260);
+        }
+
+        function applySnapping(stick, targetPointKey) {
+            const checkPoints = (targetPointKey === 'both') ? ['p1', 'p2'] : [targetPointKey];
+
+            checkPoints.forEach(ptKey => {
+                const pt = stick[ptKey];
+                let closestDist = SNAP_THRESHOLD;
+                let targetPos = null;
+
+                sticks.forEach(other => {
+                    if (other.id === stick.id) return;
+
+                    ['p1', 'p2'].forEach(otherPtKey => {
+                        const opt = other[otherPtKey];
+                        const dist = Math.hypot(pt.x - opt.x, pt.y - opt.y);
+                        if (dist < closestDist) {
+                            closestDist = dist;
+                            targetPos = { x: opt.x, y: opt.y };
+                        }
+                    });
+                });
+
+                if (targetPos) {
+                    if (activeAction && activeAction.type === 'rotate') {
+                        const fixed = activeAction.fixedPoint;
+                        const angle = Math.atan2(targetPos.y - fixed.y, targetPos.x - fixed.x);
+                        const len = activeAction.length;
+                        stick[ptKey] = {
+                            x: fixed.x + len * Math.cos(angle),
+                            y: fixed.y + len * Math.sin(angle)
+                        };
+                    } else {
+                        const dx = targetPos.x - pt.x;
+                        const dy = targetPos.y - pt.y;
+                        stick.p1.x += dx;
+                        stick.p1.y += dy;
+                        stick.p2.x += dx;
+                        stick.p2.y += dy;
+                    }
+                }
+            });
+        }
+
+        function checkAndFormGroup() {
+            const ungrouped = sticks.filter(s => !s.groupId);
+            if (ungrouped.length < 3) return;
+
+            for (let i = 0; i < ungrouped.length; i++) {
+                for (let j = i + 1; j < ungrouped.length; j++) {
+                    for (let k = j + 1; k < ungrouped.length; k++) {
+                        const s1 = ungrouped[i];
+                        const s2 = ungrouped[j];
+                        const s3 = ungrouped[k];
+
+                        if (isClosedLoop3(s1, s2, s3)) {
+                            formGroup([s1, s2, s3]);
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+
+        function isClosedLoop3(s1, s2, s3) {
+            const ratios = [s1.lengthRatio, s2.lengthRatio, s3.lengthRatio].sort((a, b) => a - b);
+            if (ratios[0] + ratios[1] <= ratios[2]) {
+                return false;
+            }
+
+            const match = (ptA, ptB) => Math.hypot(ptA.x - ptB.x, ptA.y - ptB.y) < 22;
+
+            const pts1 = [s1.p1, s1.p2];
+            const pts2 = [s2.p1, s2.p2];
+            const pts3 = [s3.p1, s3.p2];
+
+            let c12 = false, c23 = false, c31 = false;
+            if (match(pts1[0], pts2[0]) || match(pts1[0], pts2[1]) || match(pts1[1], pts2[0]) || match(pts1[1], pts2[1])) c12 = true;
+            if (match(pts2[0], pts3[0]) || match(pts2[0], pts3[1]) || match(pts2[1], pts3[0]) || match(pts2[1], pts3[1])) c23 = true;
+            if (match(pts3[0], pts1[0]) || match(pts3[0], pts1[1]) || match(pts3[1], pts1[0]) || match(pts3[1], pts1[1])) c31 = true;
+
+            if (!c12 || !c23 || !c31) return false;
+
+            const center1 = { x: (s1.p1.x + s1.p2.x) / 2, y: (s1.p1.y + s1.p2.y) / 2 };
+            const center2 = { x: (s2.p1.x + s2.p2.x) / 2, y: (s2.p1.y + s2.p2.y) / 2 };
+            const center3 = { x: (s3.p1.x + s3.p2.x) / 2, y: (s3.p1.y + s3.p2.y) / 2 };
+            
+            const area2 = Math.abs(
+                center1.x * (center2.y - center3.y) +
+                center2.x * (center3.y - center1.y) +
+                center3.x * (center1.y - center2.y)
+            );
+
+            return area2 > 100;
+        }
+
+        function tightenGroupVertices(groupSticks) {
+            const [s1, s2, s3] = groupSticks;
+            
+            const alignPair = (sA, sB) => {
+                let bestD = Infinity, bestKeyA = 'p1', bestKeyB = 'p1';
+                ['p1', 'p2'].forEach(kA => {
+                    ['p1', 'p2'].forEach(kB => {
+                        const d = Math.hypot(sA[kA].x - sB[kB].x, sA[kA].y - sB[kB].y);
+                        if (d < bestD) {
+                            bestD = d;
+                            bestKeyA = kA;
+                            bestKeyB = kB;
+                        }
+                    });
+                });
+                const avgX = (sA[bestKeyA].x + sB[bestKeyB].x) / 2;
+                const avgY = (sA[bestKeyA].y + sB[bestKeyB].y) / 2;
+                sA[bestKeyA] = { x: avgX, y: avgY };
+                sB[bestKeyB] = { x: avgX, y: avgY };
+            };
+
+            alignPair(s1, s2);
+            alignPair(s2, s3);
+            alignPair(s3, s1);
+        }
+
+        function formGroup(groupSticks) {
+            const groupId = nextGroupId++;
+            groupSticks.forEach(s => s.groupId = groupId);
+
+            tightenGroupVertices(groupSticks);
+
+            const colorKeys = groupSticks.map(s => s.type).sort().join(',');
+            const isDuplicate = groups.some(g => g.colorKeys === colorKeys);
+
+            const newGroup = {
+                id: groupId,
+                stickIds: groupSticks.map(s => s.id),
+                colorKeys: colorKeys
+            };
+
+            groups.push(newGroup);
+            renderSticks();
+
+            if (isDuplicate) {
+                const center = calcGroupCenter(groupSticks);
+                showPopupMessage(center.x, center.y, "それは もう あるよ\n👆 タップでもどす", newGroup);
+            }
+        }
+
+        function detachStickFromGroup(stick) {
+            if (!stick.groupId) return;
+            const groupId = stick.groupId;
+
+            sticks.forEach(s => {
+                if (s.groupId === groupId) s.groupId = null;
+            });
+            groups = groups.filter(g => g.id !== groupId);
+            renderSticks();
+        }
+
+        function returnGroupToStock(group) {
+            saveToHistory();
+
+            sticks = sticks.filter(s => !group.stickIds.includes(s.id));
+            groups = groups.filter(g => g.id !== group.id);
+
+            renderSticks();
+        }
+
+        function calcGroupCenter(groupSticks) {
+            let sumX = 0, sumY = 0;
+            groupSticks.forEach(s => {
+                sumX += (s.p1.x + s.p2.x) / 2;
+                sumY += (s.p1.y + s.p2.y) / 2;
+            });
+            return { x: sumX / groupSticks.length, y: sumY / groupSticks.length };
+        }
+
+        function showPopupMessage(x, y, text, targetGroup = null) {
+            const container = document.getElementById('popup-container');
+            const pop = document.createElement('div');
+            pop.className = 'popover-msg';
+            pop.style.left = `${x}px`;
+            pop.style.top = `${y - 15}px`;
+            pop.textContent = text;
+
+            let isDismissed = false;
+
+            pop.addEventListener('pointerdown', (e) => {
+                e.stopPropagation();
+                if (isDismissed) return;
+                isDismissed = true;
+
+                if (targetGroup) {
+                    returnGroupToStock(targetGroup);
+                }
+                pop.remove();
+            });
+
+            container.appendChild(pop);
+        }
+
+        function setupCanvasEvents() {
+            let currentLaserPath = null;
+
+            function getCanvasPos(e) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.clientX || (e.touches && e.touches[0].clientX);
+                const clientY = e.clientY || (e.touches && e.touches[0].clientY);
+                return { x: clientX - rect.left, y: clientY - rect.top };
+            }
+
+            const handlePointerDown = (e) => {
+                if (currentTool === 'select') return;
+                isInteracting = true;
+                saveToHistory();
+
+                const pos = getCanvasPos(e);
+                startPoint = pos;
+
+                if (currentTool.startsWith('pen') || currentTool === 'eraser') {
+                    penCtx.beginPath();
+                    penCtx.moveTo(pos.x, pos.y);
+                    configurePenStyle();
+                } else if (currentTool === 'laser') {
+                    currentLaserPath = { points: [{ x: pos.x, y: pos.y }], startTime: Date.now() };
+                    laserPaths.push(currentLaserPath);
+                }
+            };
+
+            const handlePointerMove = (e) => {
+                if (!isInteracting) return;
+                const pos = getCanvasPos(e);
+
+                if (currentTool.startsWith('pen') || currentTool === 'eraser') {
+                    penCtx.lineTo(pos.x, pos.y);
+                    penCtx.stroke();
+                } else if (currentTool === 'laser' && currentLaserPath) {
+                    currentLaserPath.points.push({ x: pos.x, y: pos.y });
+                }
+            };
+
+            const handlePointerUp = () => {
+                isInteracting = false;
+                currentLaserPath = null;
+            };
+
+            function configurePenStyle() {
+                if (currentTool === 'pen-black') {
+                    penCtx.globalCompositeOperation = 'source-over';
+                    penCtx.strokeStyle = '#1e293b';
+                    penCtx.lineWidth = 3;
+                    penCtx.lineCap = 'round';
+                    penCtx.lineJoin = 'round';
+                } else if (currentTool === 'pen-red') {
+                    penCtx.globalCompositeOperation = 'source-over';
+                    penCtx.strokeStyle = '#ef4444';
+                    penCtx.lineWidth = 3;
+                    penCtx.lineCap = 'round';
+                    penCtx.lineJoin = 'round';
+                } else if (currentTool === 'pen-blue') {
+                    penCtx.globalCompositeOperation = 'source-over';
+                    penCtx.strokeStyle = '#3b82f6';
+                    penCtx.lineWidth = 3;
+                    penCtx.lineCap = 'round';
+                    penCtx.lineJoin = 'round';
+                } else if (currentTool === 'eraser') {
+                    penCtx.globalCompositeOperation = 'destination-out';
+                    penCtx.lineWidth = 22;
+                    penCtx.lineCap = 'round';
+                    penCtx.lineJoin = 'round';
+                }
+            }
+
+            canvas.addEventListener('mousedown', handlePointerDown);
+            canvas.addEventListener('mousemove', handlePointerMove);
+            window.addEventListener('mouseup', handlePointerUp);
+
+            canvas.addEventListener('touchstart', (e) => { e.preventDefault(); handlePointerDown(e); }, { passive: false });
+            canvas.addEventListener('touchmove', (e) => { e.preventDefault(); handlePointerMove(e); }, { passive: false });
+            window.addEventListener('touchend', handlePointerUp);
+        }
+
+        function animateLaser() {
+            const now = Date.now();
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            ctx.drawImage(penCanvas, 0, 0);
+
+            const laserDuration = 2000;
+            laserPaths = laserPaths.filter(path => now - path.startTime < laserDuration);
+
+            laserPaths.forEach(path => {
+                if (path.points.length < 2) return;
+                const age = now - path.startTime;
+                const opacity = Math.max(0, 1 - age / laserDuration);
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.moveTo(path.points[0].x, path.points[0].y);
+                for (let i = 1; i < path.points.length; i++) {
+                    ctx.lineTo(path.points[i].x, path.points[i].y);
+                }
+                ctx.strokeStyle = `rgba(239, 68, 68, ${opacity})`;
+                ctx.lineWidth = 5;
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.shadowColor = `rgba(239, 68, 68, ${opacity})`;
+                ctx.shadowBlur = 8;
+                ctx.stroke();
+                ctx.restore();
+            });
+
+            requestAnimationFrame(animateLaser);
+        }
+    </script>
+</body>
+</html>
