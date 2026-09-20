@@ -185,7 +185,7 @@
             100% { opacity: 1; transform: translate(-50%, -100%) scale(1); }
         }
 
-        /* ゴミ箱と蓋のアニメーションスタイル */
+        /* ゴミ箱と蓋のアニメーションスタイル (全体の0.7倍スケール) */
         #trash-can {
             transform: scale(0.7);
             transform-origin: bottom right;
@@ -346,7 +346,7 @@
             green:  { name: '緑', label: '緑 12㎝', color: '#58B386', ratio: 6 }
         };
 
-        const SNAP_THRESHOLD = 26; // 端点吸着の感度(px)
+        const SNAP_THRESHOLD = 28; // 端点吸着の感度(px)
         const STICK_THICKNESS = 8; // 色ぼうの太さ(px)
 
         // --- 状態変数 ---
@@ -868,7 +868,7 @@
                 return false;
             }
 
-            const match = (ptA, ptB) => Math.hypot(ptA.x - ptB.x, ptA.y - ptB.y) < 22;
+            const match = (ptA, ptB) => Math.hypot(ptA.x - ptB.x, ptA.y - ptB.y) < 32;
 
             const pts1 = [s1.p1, s1.p2];
             const pts2 = [s2.p1, s2.p2];
@@ -894,36 +894,104 @@
             return area2 > 100;
         }
 
+        // 余弦定理と剛体変換による精密な正三角形・二等辺三角形への極小ズレ自動補正処理
         function tightenGroupVertices(groupSticks) {
+            if (groupSticks.length !== 3) return;
+
             const [s1, s2, s3] = groupSticks;
-            
-            const alignPair = (sA, sB) => {
-                let bestD = Infinity, bestKeyA = 'p1', bestKeyB = 'p1';
+
+            function findConnection(sa, sb) {
+                let minD = Infinity;
+                let matchA = 'p1', matchB = 'p1';
                 ['p1', 'p2'].forEach(kA => {
                     ['p1', 'p2'].forEach(kB => {
-                        const d = Math.hypot(sA[kA].x - sB[kB].x, sA[kA].y - sB[kB].y);
-                        if (d < bestD) {
-                            bestD = d;
-                            bestKeyA = kA;
-                            bestKeyB = kB;
+                        const d = Math.hypot(sa[kA].x - sb[kB].x, sa[kA].y - sb[kB].y);
+                        if (d < minD) {
+                            minD = d;
+                            matchA = kA;
+                            matchB = kB;
                         }
                     });
                 });
-                const avgX = (sA[bestKeyA].x + sB[bestKeyB].x) / 2;
-                const avgY = (sA[bestKeyA].y + sB[bestKeyB].y) / 2;
-                sA[bestKeyA] = { x: avgX, y: avgY };
-                sB[bestKeyB] = { x: avgX, y: avgY };
+                return { matchA, matchB };
+            }
+
+            const conn12 = findConnection(s1, s2);
+            const conn23 = findConnection(s2, s3);
+            const conn31 = findConnection(s3, s1);
+
+            const uV2 = {
+                x: (s1[conn12.matchA].x + s2[conn12.matchB].x) / 2,
+                y: (s1[conn12.matchA].y + s2[conn12.matchB].y) / 2
+            };
+            const uV3 = {
+                x: (s2[conn23.matchA].x + s3[conn23.matchB].x) / 2,
+                y: (s2[conn23.matchA].y + s3[conn23.matchB].y) / 2
+            };
+            const uV1 = {
+                x: (s3[conn31.matchA].x + s1[conn31.matchB].x) / 2,
+                y: (s3[conn31.matchA].y + s1[conn31.matchB].y) / 2
             };
 
-            alignPair(s1, s2);
-            alignPair(s2, s3);
-            alignPair(s3, s1);
+            const c = s1.lengthRatio * unitPx;
+            const a = s2.lengthRatio * unitPx;
+            const b = s3.lengthRatio * unitPx;
+
+            if (a + b <= c || b + c <= a || c + a <= b) return;
+
+            // 3つの辺長に基づき、正確な頂角Aを計算（3本同じ長さなら自動的に60度=正三角形）
+            const cosA = Math.max(-1, Math.min(1, (b * b + c * c - a * a) / (2 * b * c)));
+            const angleA = Math.acos(cosA);
+
+            const crossProduct = (uV2.x - uV1.x) * (uV3.y - uV1.y) - (uV2.y - uV1.y) * (uV3.x - uV1.x);
+            const signY = crossProduct >= 0 ? 1 : -1;
+
+            const rV1 = { x: 0, y: 0 };
+            const rV2 = { x: c, y: 0 };
+            const rV3 = { x: b * Math.cos(angleA), y: signY * b * Math.sin(angleA) };
+
+            const rCx = (rV1.x + rV2.x + rV3.x) / 3;
+            const rCy = (rV1.y + rV2.y + rV3.y) / 3;
+
+            const tV1 = { x: rV1.x - rCx, y: rV1.y - rCy };
+            const tV2 = { x: rV2.x - rCx, y: rV2.y - rCy };
+            const tV3 = { x: rV3.x - rCx, y: rV3.y - rCy };
+
+            const uCx = (uV1.x + uV2.x + uV3.x) / 3;
+            const uCy = (uV1.y + uV2.y + uV3.y) / 3;
+
+            const uAngle1 = Math.atan2(uV1.y - uCy, uV1.x - uCx);
+            const rAngle1 = Math.atan2(tV1.y, tV1.x);
+            const deltaAngle = uAngle1 - rAngle1;
+
+            function transformPt(pt) {
+                const rx = pt.x * Math.cos(deltaAngle) - pt.y * Math.sin(deltaAngle);
+                const ry = pt.x * Math.sin(deltaAngle) + pt.y * Math.cos(deltaAngle);
+                return {
+                    x: uCx + rx,
+                    y: uCy + ry
+                };
+            }
+
+            const finalV1 = transformPt(tV1);
+            const finalV2 = transformPt(tV2);
+            const finalV3 = transformPt(tV3);
+
+            s1[conn31.matchB] = { ...finalV1 };
+            s1[conn12.matchA] = { ...finalV2 };
+
+            s2[conn12.matchB] = { ...finalV2 };
+            s2[conn23.matchA] = { ...finalV3 };
+
+            s3[conn23.matchB] = { ...finalV3 };
+            s3[conn31.matchA] = { ...finalV1 };
         }
 
         function formGroup(groupSticks) {
             const groupId = nextGroupId++;
             groupSticks.forEach(s => s.groupId = groupId);
 
+            // 正確な二等辺三角形・正三角形に吸着調整
             tightenGroupVertices(groupSticks);
 
             const colorKeys = groupSticks.map(s => s.type).sort().join(',');
